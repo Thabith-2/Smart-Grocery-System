@@ -1,6 +1,6 @@
 // Define your api here
-var productListApiUrl = 'http://127.0.0.1:5000/getProducts';
-var uomListApiUrl = 'http://127.0.0.1:5000/getUOM';
+var productListApiUrl = 'https://smart-grocery-system.onrender.com/getProducts';
+var uomListApiUrl = 'https://smart-grocery-system.onrender.com/getUOM';
 var productSaveApiUrl = 'http://127.0.0.1:5000/insertProduct';
 var productDeleteApiUrl = 'http://127.0.0.1:5000/deleteProduct';
 var orderListApiUrl = 'http://127.0.0.1:5000/getAllOrders';
