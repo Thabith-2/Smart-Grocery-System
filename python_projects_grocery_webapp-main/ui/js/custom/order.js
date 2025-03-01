@@ -1,7 +1,7 @@
 $(document).ready(function() {
     // API URLs
-    const productListApiUrl = 'http://localhost:5000/getProducts';
-    const orderSaveApiUrl = 'http://localhost:5000/insertOrder';
+    const productListApiUrl = 'https://smart-grocery-system.onrender.com/getProducts';
+    const orderSaveApiUrl = 'https://smart-grocery-system.onrender.com/insertOrder';
     
     // Load products for dropdown
     let productList = [];
