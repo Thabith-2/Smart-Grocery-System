@@ -17,6 +17,16 @@ def after_request(response):
         sql_connection.return_connection(g.db_conn)
     return response
 
+# Database setup endpoint
+@app.route('/setup-db', methods=['GET'])
+def setup_db():
+    try:
+        import setup_db
+        result = setup_db.setup_database()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 # UOM endpoints
 @app.route('/getUOM', methods=['GET'])
 def get_uom():
