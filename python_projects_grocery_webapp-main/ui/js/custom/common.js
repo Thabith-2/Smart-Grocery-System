@@ -1,10 +1,10 @@
 // Define your api here
 var productListApiUrl = 'https://smart-grocery-system.onrender.com/getProducts';
 var uomListApiUrl = 'https://smart-grocery-system.onrender.com/getUOM';
-var productSaveApiUrl = 'http://127.0.0.1:5000/insertProduct';
-var productDeleteApiUrl = 'http://127.0.0.1:5000/deleteProduct';
-var orderListApiUrl = 'http://127.0.0.1:5000/getAllOrders';
-var orderSaveApiUrl = 'http://127.0.0.1:5000/insertOrder';
+var productSaveApiUrl = 'https://smart-grocery-system.onrender.com/insertProduct';
+var productDeleteApiUrl = 'https://smart-grocery-system.onrender.com/deleteProduct';
+var orderListApiUrl = 'https://smart-grocery-system.onrender.com/getAllOrders';
+var orderSaveApiUrl = 'https://smart-grocery-system.onrender.com/insertOrder';
 
 // For product drop in order
 var productsApiUrl = 'https://fakestoreapi.com/products';
