@@ -1,7 +1,7 @@
 
 ## 2. server.py
 
-```python
+#```python
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 import json
