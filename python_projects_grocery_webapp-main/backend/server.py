@@ -5,6 +5,8 @@ import products_dao
 import orders_dao
 import uom_dao
 import sql_connection
+import os
+import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -19,14 +21,21 @@ def after_request(response):
 
 # Database setup endpoint
 @app.route('/setup-db', methods=['GET'])
-def setup_db():
+def setup_db_route():
     try:
-        # Use a relative import or direct function call
-        from . import setup_db
+        # Use an absolute import instead of a relative import
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if current_dir not in sys.path:
+            sys.path.append(current_dir)
+        
+        # Now import the module
+        import setup_db
         result = setup_db.setup_database()
         return jsonify(result)
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        import traceback
+        error_details = traceback.format_exc()
+        return jsonify({"success": False, "error": str(e), "details": error_details})
 
 # UOM endpoints
 @app.route('/getUOM', methods=['GET'])
