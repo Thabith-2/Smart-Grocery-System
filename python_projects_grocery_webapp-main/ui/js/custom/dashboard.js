@@ -43,7 +43,11 @@ $(document).ready(function() {
         const recentOrders = orders.slice(0, 5);
         
         recentOrders.forEach(order => {
-            const orderTotal = parseFloat(order.total);
+            // Safely parse the order total
+            let orderTotal = 0;
+            if (order.total && !isNaN(parseFloat(order.total))) {
+                orderTotal = parseFloat(order.total);
+            }
             
             tableContent += `
                 <tr>
@@ -100,8 +104,19 @@ $(document).ready(function() {
         // Calculate total revenue
         let totalRevenue = 0;
         orders.forEach(order => {
-            totalRevenue += parseFloat(order.total);
+            // Add debug logging
+            console.log('Order:', order);
+            console.log('Order total:', order.total, typeof order.total);
+            
+            // Safely parse the order total
+            if (order.total && !isNaN(parseFloat(order.total))) {
+                totalRevenue += parseFloat(order.total);
+            } else {
+                console.log('Invalid order total:', order.total);
+            }
         });
+        
+        // Format and display the total revenue
         $('#total-revenue').text('₹' + totalRevenue.toFixed(2));
     }
     
