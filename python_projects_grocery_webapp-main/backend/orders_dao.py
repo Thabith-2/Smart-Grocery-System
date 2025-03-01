@@ -1,3 +1,7 @@
+
+## 4. orders_dao.py
+
+```python
 def get_all_orders(connection):
     cursor = connection.cursor()
     query = ("SELECT o.order_id, o.customer_name, o.total_amount, o.datetime, "
@@ -11,16 +15,26 @@ def get_all_orders(connection):
     cursor.execute(query)
     
     orders = {}
-    for (order_id, customer_name, total_amount, datetime, 
-         order_details_id, product_id, quantity, total_price, 
-         product_name, price_per_unit, uom_id, uom_name) in cursor:
+    for row in cursor.fetchall():
+        order_id = row[0]
+        customer_name = row[1]
+        total_amount = row[2]
+        datetime = row[3]
+        order_details_id = row[4]
+        product_id = row[5]
+        quantity = row[6]
+        total_price = row[7]
+        product_name = row[8]
+        price_per_unit = row[9]
+        uom_id = row[10]
+        uom_name = row[11]
         
         if order_id not in orders:
             orders[order_id] = {
                 'order_id': order_id,
                 'customer_name': customer_name,
                 'total_amount': float(total_amount),
-                'datetime': datetime,
+                'datetime': datetime.isoformat() if datetime else None,
                 'order_details': []
             }
             
@@ -31,7 +45,7 @@ def get_all_orders(connection):
                 'quantity': float(quantity),
                 'total_price': float(total_price),
                 'product_name': product_name,
-                'price_per_unit': float(price_per_unit),
+                'price_per_unit': float(price_per_unit) if price_per_unit else 0,
                 'uom_id': uom_id,
                 'uom_name': uom_name
             })
@@ -40,15 +54,6 @@ def get_all_orders(connection):
 
 def insert_order(connection, order):
     cursor = connection.cursor()
-    
-    # Get the next available order_id
-    query = "SELECT MAX(order_id) FROM orders"
-    cursor.execute(query)
-    result = cursor.fetchone()
-    if result[0] is None:
-        next_order_id = 1
-    else:
-        next_order_id = result[0] + 1
     
     # Insert order
     order_query = ("INSERT INTO orders "
@@ -86,3 +91,5 @@ def insert_order(connection, order):
     connection.commit()
     
     return order_id
+```
+
