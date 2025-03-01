@@ -1,7 +1,3 @@
-
-## 5. uom_dao.py
-
-```python
 def get_uoms(connection):
     cursor = connection.cursor()
     query = ("SELECT uom_id, uom_name FROM uom")
@@ -15,4 +11,3 @@ def get_uoms(connection):
         })
     
     return response
-```
