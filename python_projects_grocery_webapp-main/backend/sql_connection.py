@@ -25,4 +25,3 @@ def return_connection(connection):
     global __connection_pool
     if __connection_pool:
         __connection_pool.putconn(connection)
-
