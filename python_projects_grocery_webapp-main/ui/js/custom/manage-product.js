@@ -1,9 +1,9 @@
 $(document).ready(function() {
     // API URLs
-    const productListApiUrl = 'http://localhost:5000/getProducts';
-    const productSaveApiUrl = 'http://localhost:5000/insertProduct';
-    const productDeleteApiUrl = 'http://localhost:5000/deleteProduct';
-    const uomListApiUrl = 'http://localhost:5000/getUOM';
+    const productListApiUrl = 'https://smart-grocery-system.onrender.com/getProducts';
+    const productSaveApiUrl = 'https://smart-grocery-system.onrender.com/insertProduct';
+    const productDeleteApiUrl = 'https://smart-grocery-system.onrender.com/deleteProduct';
+    const uomListApiUrl = 'https://smart-grocery-system.onrender.com/getUOM';
     
     // Load product data when page loads
     $.get(productListApiUrl, function(response) {
