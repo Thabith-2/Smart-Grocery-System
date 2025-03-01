@@ -1,7 +1,7 @@
 $(document).ready(function() {
     // API endpoints
-    const ordersApiUrl = 'http://localhost:5000/getAllOrders';
-    const productsApiUrl = 'http://localhost:5000/getProducts';
+    const ordersApiUrl = 'https://smart-grocery-system.onrender.com/getAllOrders';
+    const productsApiUrl = 'https://smart-grocery-system.onrender.com/getProducts';
     
     // Fetch orders from the API
     $.ajax({
