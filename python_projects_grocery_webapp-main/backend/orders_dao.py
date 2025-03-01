@@ -1,7 +1,3 @@
-
-## 4. orders_dao.py
-
-```python
 def get_all_orders(connection):
     cursor = connection.cursor()
     query = ("SELECT o.order_id, o.customer_name, o.total_amount, o.datetime, "
@@ -91,5 +87,4 @@ def insert_order(connection, order):
     connection.commit()
     
     return order_id
-```
 
