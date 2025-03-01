@@ -1,7 +1,3 @@
-
-## 3. products_dao.py
-
-```python
 def get_all_products(connection):
     cursor = connection.cursor()
     query = ("SELECT p.product_id, p.name, p.uom_id, p.price_per_unit, u.uom_name "
@@ -39,4 +35,3 @@ def delete_product(connection, product_id):
     query = "DELETE FROM products WHERE product_id = %s"
     cursor.execute(query, (product_id,))
     connection.commit()
-```
