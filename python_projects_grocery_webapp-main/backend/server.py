@@ -21,7 +21,8 @@ def after_request(response):
 @app.route('/setup-db', methods=['GET'])
 def setup_db():
     try:
-        import setup_db
+        # Use a relative import or direct function call
+        from . import setup_db
         result = setup_db.setup_database()
         return jsonify(result)
     except Exception as e:
