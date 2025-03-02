@@ -8,6 +8,7 @@ $(document).ready(function() {
         url: ordersApiUrl,
         type: 'GET',
         success: function(response) {
+            console.log("Orders API response:", response);
             if (response && response.length > 0) {
                 displayOrders(response);
                 updateStats(response);
@@ -43,8 +44,25 @@ $(document).ready(function() {
         const recentOrders = orders.slice(0, 5);
         
         recentOrders.forEach(order => {
-            // Safely parse the order total
-            let orderTotal = parseFloat(order.total || '0');
+            // Get the order total - try different properties based on API response structure
+            let orderTotal = 0;
+            
+            // Try different possible properties for total
+            if (order.grand_total && !isNaN(parseFloat(order.grand_total))) {
+                orderTotal = parseFloat(order.grand_total);
+            } else if (order.total && !isNaN(parseFloat(order.total))) {
+                orderTotal = parseFloat(order.total);
+            } else {
+                // Calculate from order details if available
+                if (order.order_details && Array.isArray(order.order_details)) {
+                    orderTotal = order.order_details.reduce((sum, detail) => {
+                        const itemTotal = parseFloat(detail.total_price || 0);
+                        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+                    }, 0);
+                }
+            }
+            
+            console.log(`Order #${order.order_id} total: ${orderTotal}`);
             
             tableContent += `
                 <tr>
@@ -73,28 +91,67 @@ $(document).ready(function() {
             if (order) {
                 // Process order details for bill
                 const orderDetails = order.order_details || [];
-                const processedItems = orderDetails.map(detail => {
-                    // Find product details if available
-                    const product = detail.product || {};
-                    return {
-                        name: product.name || 'Unknown Item',
-                        quantity: parseInt(detail.quantity) || 0,
-                        unit: product.uom_name || 'unit',
-                        price: parseFloat(detail.unit_price || '0'),
-                        total: parseFloat(detail.total_price || '0')
-                    };
+                
+                // Calculate total if not available
+                let orderTotal = 0;
+                if (order.grand_total && !isNaN(parseFloat(order.grand_total))) {
+                    orderTotal = parseFloat(order.grand_total);
+                } else if (order.total && !isNaN(parseFloat(order.total))) {
+                    orderTotal = parseFloat(order.total);
+                } else {
+                    // Calculate from order details
+                    orderTotal = orderDetails.reduce((sum, detail) => {
+                        const itemTotal = parseFloat(detail.total_price || 0);
+                        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+                    }, 0);
+                }
+                
+                // Process items for bill display
+                const processedItems = [];
+                
+                orderDetails.forEach(detail => {
+                    // Try to get product info
+                    let productName = 'Unknown Item';
+                    let unit = 'unit';
+                    let unitPrice = 0;
+                    
+                    // If product info is nested in the detail
+                    if (detail.product) {
+                        productName = detail.product.name || 'Unknown Item';
+                        unit = detail.product.uom_name || 'unit';
+                    }
+                    
+                    // Get quantity and prices
+                    const quantity = parseInt(detail.quantity) || 0;
+                    
+                    // Calculate unit price if not available
+                    if (detail.unit_price) {
+                        unitPrice = parseFloat(detail.unit_price);
+                    } else if (detail.total_price && quantity > 0) {
+                        unitPrice = parseFloat(detail.total_price) / quantity;
+                    }
+                    
+                    const totalPrice = parseFloat(detail.total_price) || (unitPrice * quantity);
+                    
+                    processedItems.push({
+                        name: productName,
+                        quantity: quantity,
+                        unit: unit,
+                        price: unitPrice,
+                        total: totalPrice
+                    });
                 });
 
                 // Prepare order data for bill page
                 const orderData = {
                     orderId: order.order_id,
                     customerName: order.customer_name || 'N/A',
-                    date: order.datetime,
+                    date: order.datetime || new Date().toISOString(),
                     items: processedItems,
-                    total: parseFloat(order.total || '0')
+                    total: orderTotal
                 };
                 
-                console.log('Prepared order data for bill:', orderData); // Debug log
+                console.log('Prepared order data for bill:', orderData);
                 localStorage.setItem('lastOrder', JSON.stringify(orderData));
                 window.location.href = 'bill.html';
             }
@@ -112,10 +169,25 @@ $(document).ready(function() {
         $('#total-orders').text(orders.length);
         
         // Calculate total revenue
-        const totalRevenue = orders.reduce((sum, order) => {
-            const orderTotal = parseFloat(order.total || '0');
-            return sum + (isNaN(orderTotal) ? 0 : orderTotal);
-        }, 0);
+        let totalRevenue = 0;
+        
+        orders.forEach(order => {
+            // Try different possible properties for total
+            if (order.grand_total && !isNaN(parseFloat(order.grand_total))) {
+                totalRevenue += parseFloat(order.grand_total);
+            } else if (order.total && !isNaN(parseFloat(order.total))) {
+                totalRevenue += parseFloat(order.total);
+            } else {
+                // Calculate from order details if available
+                if (order.order_details && Array.isArray(order.order_details)) {
+                    const orderTotal = order.order_details.reduce((sum, detail) => {
+                        const itemTotal = parseFloat(detail.total_price || 0);
+                        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+                    }, 0);
+                    totalRevenue += orderTotal;
+                }
+            }
+        });
         
         $('#total-revenue').text('₹' + totalRevenue.toFixed(2));
     }
@@ -127,9 +199,9 @@ $(document).ready(function() {
             if (isNaN(date.getTime())) throw new Error('Invalid date');
             
             return date.toLocaleDateString('en-IN', { 
-                year: 'numeric', 
-                month: 'short', 
                 day: 'numeric',
+                month: 'short', 
+                year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
             });
@@ -138,5 +210,37 @@ $(document).ready(function() {
         }
     }
     
-    // ... rest of the code remains the same ...
+    // Function to show empty message
+    function showEmptyMessage() {
+        $('table tbody').html(`
+            <tr>
+                <td colspan="5" class="text-center">
+                    <div class="py-5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" style="width: 80px; opacity: 0.5" class="mb-3">
+                        <p class="mb-3">No orders found. Create your first order!</p>
+                        <a href="order.html" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> New Order
+                        </a>
+                    </div>
+                </td>
+            </tr>
+        `);
+    }
+    
+    // Function to show error message
+    function showErrorMessage() {
+        $('table tbody').html(`
+            <tr>
+                <td colspan="5" class="text-center text-danger">
+                    <div class="py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <p>Unable to load orders. Please try again later.</p>
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="location.reload()">
+                            <i class="fas fa-sync-alt"></i> Retry
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `);
+    }
 });
