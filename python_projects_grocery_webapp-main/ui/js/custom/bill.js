@@ -8,7 +8,7 @@ $(document).ready(function() {
         
         if (!orderData || !orderData.items || !Array.isArray(orderData.items)) {
             console.error("Invalid order data:", orderData);
-            showError();
+            showError('.bill-container', 'No order data found to generate a bill.');
             return;
         }
         
@@ -17,36 +17,14 @@ $(document).ready(function() {
         displayTotal(orderData.total);
     } catch (error) {
         console.error('Error processing order data:', error);
-        showError();
+        showError('.bill-container', 'Error processing order data.');
     }
+    
+    // Add print functionality
+    $('#printBill').click(function() {
+        window.print();
+    });
 });
-
-function formatCurrency(amount) {
-    const num = parseFloat(amount);
-    if (isNaN(num)) {
-        console.warn("Invalid amount for currency formatting:", amount);
-        return '₹0.00';
-    }
-    return '₹' + num.toFixed(2);
-}
-
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) throw new Error('Invalid date');
-        
-        return date.toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    } catch (error) {
-        console.warn("Date formatting error:", error);
-        return new Date().toLocaleDateString('en-IN');
-    }
-}
 
 function displayOrderInfo(orderData) {
     console.log("Displaying order info:", orderData);
@@ -83,11 +61,11 @@ function displayTotal(total) {
     $('#bill-total').text(formatCurrency(total));
 }
 
-function showError() {
-    $('.bill-container').html(`
+function showError(element, message) {
+    $(element).html(`
         <div class="alert alert-danger" role="alert">
             <h4 class="alert-heading">No Order Data Found</h4>
-            <p>We couldn't find any order data to generate a bill. Please create a new order.</p>
+            <p>${message || 'We couldn\'t find any order data to generate a bill. Please create a new order.'}</p>
             <hr>
             <div class="d-flex justify-content-center">
                 <a href="order.html" class="btn btn-primary me-2">
