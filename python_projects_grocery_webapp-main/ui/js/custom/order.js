@@ -1,15 +1,28 @@
 $(document).ready(function() {
-    // API URLs
-    const productListApiUrl = 'http://localhost:5000/getProducts';
-    const orderSaveApiUrl = 'http://localhost:5000/insertOrder';
-    
     // Load products for dropdown
     let productList = [];
-    $.get(productListApiUrl, function(response) {
-        if (response) {
-            productList = response;
-            // Add first item by default
-            addNewItem();
+    
+    // Show loading state
+    showLoading('#itemsInOrder');
+    
+    $.ajax({
+        url: productListApiUrl,
+        type: 'GET',
+        success: function(response) {
+            console.log("Products loaded:", response);
+            if (response && Array.isArray(response)) {
+                productList = response;
+                // Clear loading state
+                $('#itemsInOrder').empty();
+                // Add first item by default
+                addNewItem();
+            } else {
+                showError('#itemsInOrder', 'Unable to load products. Please try again later.');
+            }
+        },
+        error: function(error) {
+            handleApiError(error);
+            showError('#itemsInOrder', 'Unable to load products. Please try again later.');
         }
     });
     
@@ -68,8 +81,14 @@ $(document).ready(function() {
         // Get customer name
         const customerName = $("#customerName").val();
         
-        if (!customerName) {
-            alert('Please enter customer name');
+        // Validate form
+        const validation = validateForm(
+            { customerName },
+            { customerName: { required: true, label: 'Customer Name' } }
+        );
+        
+        if (!validation.isValid) {
+            showToast(validation.errors.customerName, 'error');
             return;
         }
         
@@ -88,13 +107,13 @@ $(document).ready(function() {
             const total = parseFloat($(this).find('.product-total').val()) || 0;
             
             if (!productId) {
-                alert('Please select a product');
+                showToast('Please select a product', 'error');
                 isValid = false;
                 return false;
             }
             
             if (qty <= 0) {
-                alert('Quantity must be greater than 0');
+                showToast('Quantity must be greater than 0', 'error');
                 isValid = false;
                 return false;
             }
@@ -124,7 +143,7 @@ $(document).ready(function() {
         }
         
         if (orderItems.length === 0) {
-            alert('Please add at least one item');
+            showToast('Please add at least one item', 'error');
             return;
         }
         
@@ -137,6 +156,9 @@ $(document).ready(function() {
         };
         
         console.log("Sending order data:", JSON.stringify(data)); // Debug log
+        
+        // Show loading state
+        showLoading('#orderForm');
         
         // Create form data for API
         const formData = new FormData();
@@ -165,7 +187,7 @@ $(document).ready(function() {
                 localStorage.setItem('lastOrder', JSON.stringify(orderData));
                 
                 // Show success message
-                alert('Order saved successfully');
+                showToast('Order saved successfully', 'success');
                 
                 // Redirect to bill page
                 window.location.href = 'bill.html';
@@ -173,7 +195,10 @@ $(document).ready(function() {
             error: function(error) {
                 console.error('Error saving order:', error);
                 console.error('Error details:', error.responseText); // More detailed error
-                alert('Error saving order. Please try again.');
+                showToast('Error saving order. Please try again.', 'error');
+                
+                // Remove loading state
+                $('#orderForm').show();
             }
         });
     });
