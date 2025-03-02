@@ -18,6 +18,23 @@ $(document).ready(function() {
     displayTotal(orderData.total);
 });
 
+// Function to format currency
+function formatCurrency(amount) {
+    return '₹' + parseFloat(amount).toFixed(2);
+}
+
+// Function to format date
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Function to display order information
 function displayOrderInfo(orderData) {
     $('#order-id').text(orderData.orderId);
@@ -34,8 +51,8 @@ function displayOrderItems(items) {
             <tr>
                 <td>${item.name}</td>
                 <td>${item.quantity} ${item.unit}</td>
-                <td>₹${parseFloat(item.price).toFixed(2)}</td>
-                <td>₹${parseFloat(item.total).toFixed(2)}</td>
+                <td>${formatCurrency(item.price)}</td>
+                <td>${formatCurrency(item.total)}</td>
             </tr>
         `;
     });
@@ -45,7 +62,7 @@ function displayOrderItems(items) {
 
 // Function to display total
 function displayTotal(total) {
-    $('#bill-total').text(`₹${parseFloat(total).toFixed(2)}`);
+    $('#bill-total').text(formatCurrency(total));
 }
 
 // Function to show error
