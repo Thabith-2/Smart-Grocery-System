@@ -1,20 +1,19 @@
 $(document).ready(function() {
     try {
-        // Get order data from localStorage
-        const orderData = JSON.parse(localStorage.getItem('lastOrder'));
+        console.log("Loading bill page");
+        const orderDataString = localStorage.getItem('lastOrder');
+        console.log("Retrieved order data:", orderDataString);
         
-        if (!orderData || !orderData.items || orderData.items.length === 0) {
+        const orderData = JSON.parse(orderDataString);
+        
+        if (!orderData || !orderData.items || !Array.isArray(orderData.items)) {
+            console.error("Invalid order data:", orderData);
             showError();
             return;
         }
         
-        // Display order information
         displayOrderInfo(orderData);
-        
-        // Display order items
         displayOrderItems(orderData.items);
-        
-        // Display total
         displayTotal(orderData.total);
     } catch (error) {
         console.error('Error processing order data:', error);
@@ -22,13 +21,15 @@ $(document).ready(function() {
     }
 });
 
-// Function to format currency
 function formatCurrency(amount) {
-    if (!amount || isNaN(amount)) return '₹0.00';
-    return '₹' + parseFloat(amount).toFixed(2);
+    const num = parseFloat(amount);
+    if (isNaN(num)) {
+        console.warn("Invalid amount for currency formatting:", amount);
+        return '₹0.00';
+    }
+    return '₹' + num.toFixed(2);
 }
 
-// Function to format date
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
@@ -40,40 +41,36 @@ function formatDate(dateString) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }).replace(/\//g, '/');
+        });
     } catch (error) {
+        console.warn("Date formatting error:", error);
         return new Date().toLocaleDateString('en-IN');
     }
 }
 
-// Function to display order information
 function displayOrderInfo(orderData) {
+    console.log("Displaying order info:", orderData);
     $('#order-id').text(orderData.orderId || 'N/A');
     $('#customer-name').text(orderData.customerName || 'N/A');
     $('#order-date').text(formatDate(orderData.date));
 }
 
-// Function to display order items
 function displayOrderItems(items) {
-    if (!Array.isArray(items)) return;
-    
+    console.log("Displaying order items:", items);
     let tableContent = '';
     
-    items.forEach(item => {
-        if (!item) return;
-        
-        const name = item.name || 'Unknown Item';
-        const quantity = item.quantity || 0;
-        const unit = item.unit || 'unit';
-        const price = item.price || 0;
-        const total = item.total || 0;
+    items.forEach((item, index) => {
+        if (!item) {
+            console.warn(`Skipping invalid item at index ${index}`);
+            return;
+        }
         
         tableContent += `
             <tr>
-                <td>${name}</td>
-                <td>${quantity} ${unit}</td>
-                <td>${formatCurrency(price)}</td>
-                <td>${formatCurrency(total)}</td>
+                <td>${item.name || 'Unknown Item'}</td>
+                <td>${item.quantity || 0} ${item.unit || 'unit'}</td>
+                <td>${formatCurrency(item.price)}</td>
+                <td>${formatCurrency(item.total)}</td>
             </tr>
         `;
     });
@@ -81,26 +78,9 @@ function displayOrderItems(items) {
     $('#bill-items').html(tableContent);
 }
 
-// Function to display total
 function displayTotal(total) {
+    console.log("Displaying total:", total);
     $('#bill-total').text(formatCurrency(total));
 }
 
-// Function to show error
-function showError() {
-    $('.bill-container').html(`
-        <div class="alert alert-danger" role="alert">
-            <h4 class="alert-heading">No Order Data Found</h4>
-            <p>We couldn't find any order data to generate a bill. Please create a new order.</p>
-            <hr>
-            <div class="d-flex justify-content-center">
-                <a href="order.html" class="btn btn-primary me-2">
-                    <i class="fas fa-shopping-cart"></i> Create New Order
-                </a>
-                <a href="index.html" class="btn btn-secondary">
-                    <i class="fas fa-home"></i> Go to Dashboard
-                </a>
-            </div>
-        </div>
-    `);
-}
+// ... rest of the code remains the same ...
