@@ -1,18 +1,13 @@
 $(document).ready(function() {
     try {
         // Get order data from localStorage
-        const orderDataStr = localStorage.getItem('lastOrder');
-        if (!orderDataStr) {
-            showError('No order data found');
+        const orderData = JSON.parse(localStorage.getItem('lastOrder'));
+        
+        if (!orderData || !orderData.items || orderData.items.length === 0) {
+            showError();
             return;
         }
-
-        const orderData = JSON.parse(orderDataStr);
-        if (!orderData || !orderData.items || !orderData.items.length) {
-            showError('Invalid order data');
-            return;
-        }
-
+        
         // Display order information
         displayOrderInfo(orderData);
         
@@ -22,38 +17,30 @@ $(document).ready(function() {
         // Display total
         displayTotal(orderData.total);
     } catch (error) {
-        console.error('Error processing order:', error);
-        showError('Error processing order data');
+        console.error('Error processing order data:', error);
+        showError();
     }
 });
 
 // Function to format currency
 function formatCurrency(amount) {
-    const num = parseFloat(amount);
-    if (isNaN(num)) return '₹0.00';
-    return '₹' + num.toFixed(2);
+    if (!amount || isNaN(amount)) return '₹0.00';
+    return '₹' + parseFloat(amount).toFixed(2);
 }
 
 // Function to format date
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) {
-            return new Date().toLocaleDateString('en-IN', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
+        if (isNaN(date.getTime())) throw new Error('Invalid date');
+        
         return date.toLocaleDateString('en-IN', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        });
+        }).replace(/\//g, '/');
     } catch (error) {
         return new Date().toLocaleDateString('en-IN');
     }
@@ -62,17 +49,14 @@ function formatDate(dateString) {
 // Function to display order information
 function displayOrderInfo(orderData) {
     $('#order-id').text(orderData.orderId || 'N/A');
-    $('#customer-name').text(orderData.customerName || 'Guest');
+    $('#customer-name').text(orderData.customerName || 'N/A');
     $('#order-date').text(formatDate(orderData.date));
 }
 
 // Function to display order items
 function displayOrderItems(items) {
-    if (!Array.isArray(items) || items.length === 0) {
-        $('#bill-items').html('<tr><td colspan="4" class="text-center">No items found</td></tr>');
-        return;
-    }
-
+    if (!Array.isArray(items)) return;
+    
     let tableContent = '';
     
     items.forEach(item => {
@@ -81,9 +65,9 @@ function displayOrderItems(items) {
         const name = item.name || 'Unknown Item';
         const quantity = item.quantity || 0;
         const unit = item.unit || 'unit';
-        const price = parseFloat(item.price) || 0;
-        const total = parseFloat(item.total) || 0;
-
+        const price = item.price || 0;
+        const total = item.total || 0;
+        
         tableContent += `
             <tr>
                 <td>${name}</td>
@@ -99,16 +83,15 @@ function displayOrderItems(items) {
 
 // Function to display total
 function displayTotal(total) {
-    const formattedTotal = formatCurrency(total || 0);
-    $('#bill-total').text(formattedTotal);
+    $('#bill-total').text(formatCurrency(total));
 }
 
 // Function to show error
-function showError(message = 'No Order Data Found') {
+function showError() {
     $('.bill-container').html(`
         <div class="alert alert-danger" role="alert">
-            <h4 class="alert-heading">${message}</h4>
-            <p>We couldn't process the order data properly. Please create a new order.</p>
+            <h4 class="alert-heading">No Order Data Found</h4>
+            <p>We couldn't find any order data to generate a bill. Please create a new order.</p>
             <hr>
             <div class="d-flex justify-content-center">
                 <a href="order.html" class="btn btn-primary me-2">
