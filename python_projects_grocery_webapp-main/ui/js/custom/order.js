@@ -1,10 +1,8 @@
 // ... existing code ...
 
-// Save order button click handler
 $("#saveOrder").click(function() {
-    console.log("Save button clicked"); // Debug log
+    console.log("Save button clicked");
     
-    // Get customer name
     const customerName = $("#customerName").val();
     
     if (!customerName) {
@@ -12,7 +10,6 @@ $("#saveOrder").click(function() {
         return;
     }
     
-    // Get order items
     const orderItems = [];
     const billItems = [];
     let isValid = true;
@@ -21,9 +18,9 @@ $("#saveOrder").click(function() {
         const productSelect = $(this).find('.cart-product');
         const productId = productSelect.val();
         const productName = productSelect.find('option:selected').text();
-        const qty = parseInt($(this).find('.product-qty').val());
-        const price = parseFloat($(this).find('.product-price').val());
-        const total = parseFloat($(this).find('.product-total').val());
+        const qty = parseInt($(this).find('.product-qty').val()) || 0;
+        const price = parseFloat($(this).find('.product-price').val()) || 0;
+        const total = parseFloat($(this).find('.product-total').val()) || 0;
         
         if (!productId) {
             alert('Please select a product');
@@ -37,49 +34,42 @@ $("#saveOrder").click(function() {
             return false;
         }
         
-        // Find product details for unit
         const product = productList.find(p => p.product_id == productId);
-        const unit = product ? product.uom_name : '';
+        const unit = product ? product.uom_name : 'unit';
         
         orderItems.push({
             product_id: productId,
             quantity: qty,
+            unit_price: price.toString(),
             total_price: total.toString()
         });
         
         billItems.push({
             name: productName || 'Unknown Item',
-            quantity: qty || 0,
-            unit: unit || 'unit',
-            price: price || 0,
-            total: total || 0
+            quantity: qty,
+            unit: unit,
+            price: price,
+            total: total
         });
     });
     
-    if (!isValid) {
+    if (!isValid || orderItems.length === 0) {
+        if (orderItems.length === 0) alert('Please add at least one item');
         return;
     }
     
-    if (orderItems.length === 0) {
-        alert('Please add at least one item');
-        return;
-    }
-    
-    // Create order data
-    const grandTotal = parseFloat($("#product_grand_total").val());
+    const grandTotal = parseFloat($("#product_grand_total").val()) || 0;
     const data = {
         customer_name: customerName,
         grand_total: grandTotal.toString(),
         order_details: orderItems
     };
     
-    console.log("Sending order data:", JSON.stringify(data)); // Debug log
+    console.log("Sending order data:", JSON.stringify(data));
     
-    // Create form data for API
     const formData = new FormData();
     formData.append('data', JSON.stringify(data));
     
-    // Save order via API
     $.ajax({
         url: orderSaveApiUrl,
         type: 'POST',
@@ -87,30 +77,20 @@ $("#saveOrder").click(function() {
         processData: false,
         contentType: false,
         success: function(response) {
-            console.log("Order API response:", response); // Debug log
+            console.log("Order API response:", response);
             
-            // Store order data for bill generation with proper formatting
             const orderData = {
                 orderId: response.order_id,
                 customerName: customerName,
                 date: new Date().toISOString(),
-                items: billItems.map(item => ({
-                    name: item.name,
-                    quantity: parseInt(item.quantity),
-                    unit: item.unit,
-                    price: parseFloat(item.price),
-                    total: parseFloat(item.total)
-                })),
-                total: parseFloat(grandTotal)
+                items: billItems,
+                total: grandTotal
             };
             
-            // Save to localStorage with proper JSON stringification
+            console.log("Storing order data:", JSON.stringify(orderData));
             localStorage.setItem('lastOrder', JSON.stringify(orderData));
             
-            // Show success message
             alert('Order saved successfully');
-            
-            // Redirect to bill page
             window.location.href = 'bill.html';
         },
         error: function(error) {
