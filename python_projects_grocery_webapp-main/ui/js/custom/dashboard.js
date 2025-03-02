@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    // API endpoints - update to use the correct API URLs
+    // API endpoints
     const ordersApiUrl = 'http://localhost:5000/getAllOrders';
     const productsApiUrl = 'http://localhost:5000/getProducts';
     
@@ -288,12 +288,17 @@ $(document).ready(function() {
                     <div class="py-5">
                         <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
                         <p>Unable to load orders. Please try again later.</p>
-                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="location.reload()">
+                        <button class="btn btn-outline-primary btn-sm mt-2" id="retryButton">
                             <i class="fas fa-sync-alt"></i> Retry
                         </button>
                     </div>
                 </td>
             </tr>
         `);
+        
+        // Add click handler for retry button
+        $('#retryButton').click(function() {
+            location.reload();
+        });
     }
 });
