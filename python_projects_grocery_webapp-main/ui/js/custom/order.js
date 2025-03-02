@@ -1,39 +1,21 @@
 // ... existing code ...
 
+// Inside the saveOrder click handler
 $("#saveOrder").click(function() {
-    console.log("Save button clicked");
-    
-    const customerName = $("#customerName").val();
-    
-    if (!customerName) {
-        alert('Please enter customer name');
-        return;
-    }
-    
-    const orderItems = [];
-    const billItems = [];
-    let isValid = true;
+    // ... existing code ...
     
     $("#itemsInOrder .product-item").each(function() {
         const productSelect = $(this).find('.cart-product');
         const productId = productSelect.val();
-        const productName = productSelect.find('option:selected').text();
+        // Get the actual text of the selected option for product name
+        const productName = productSelect.find('option:selected').text().trim();
         const qty = parseInt($(this).find('.product-qty').val()) || 0;
         const price = parseFloat($(this).find('.product-price').val()) || 0;
         const total = parseFloat($(this).find('.product-total').val()) || 0;
         
-        if (!productId) {
-            alert('Please select a product');
-            isValid = false;
-            return false;
-        }
+        // ... validation code ...
         
-        if (qty <= 0) {
-            alert('Quantity must be greater than 0');
-            isValid = false;
-            return false;
-        }
-        
+        // Find product details for unit
         const product = productList.find(p => p.product_id == productId);
         const unit = product ? product.uom_name : 'unit';
         
@@ -45,7 +27,7 @@ $("#saveOrder").click(function() {
         });
         
         billItems.push({
-            name: productName || 'Unknown Item',
+            name: productName || `Product #${productId}`,  // Use actual product name
             quantity: qty,
             unit: unit,
             price: price,
@@ -53,52 +35,32 @@ $("#saveOrder").click(function() {
         });
     });
     
-    if (!isValid || orderItems.length === 0) {
-        if (orderItems.length === 0) alert('Please add at least one item');
-        return;
-    }
+    // ... rest of the code ...
     
-    const grandTotal = parseFloat($("#product_grand_total").val()) || 0;
-    const data = {
-        customer_name: customerName,
-        grand_total: grandTotal.toString(),
-        order_details: orderItems
-    };
+    // In the success handler
+    success: function(response) {
+        console.log("Order API response:", response);
+        
+        // Store order data for bill generation with proper formatting
+        const orderData = {
+            orderId: response.order_id,
+            customerName: customerName,
+            date: new Date().toISOString(),
+            items: billItems,  // Use the billItems array with product names
+            total: parseFloat(grandTotal)
+        };
+        
+        console.log("Storing order data for bill:", JSON.stringify(orderData));
+        localStorage.setItem('lastOrder', JSON.stringify(orderData));
+        
+        // Show success message
+        alert('Order saved successfully');
+        
+        // Redirect to bill page
+        window.location.href = 'bill.html';
+    },
     
-    console.log("Sending order data:", JSON.stringify(data));
-    
-    const formData = new FormData();
-    formData.append('data', JSON.stringify(data));
-    
-    $.ajax({
-        url: orderSaveApiUrl,
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-            console.log("Order API response:", response);
-            
-            const orderData = {
-                orderId: response.order_id,
-                customerName: customerName,
-                date: new Date().toISOString(),
-                items: billItems,
-                total: grandTotal
-            };
-            
-            console.log("Storing order data:", JSON.stringify(orderData));
-            localStorage.setItem('lastOrder', JSON.stringify(orderData));
-            
-            alert('Order saved successfully');
-            window.location.href = 'bill.html';
-        },
-        error: function(error) {
-            console.error('Error saving order:', error);
-            console.error('Error details:', error.responseText);
-            alert('Error saving order. Please try again.');
-        }
-    });
+    // ... rest of the code ...
 });
 
-// ... existing code ...
+// ... rest of the code ...
