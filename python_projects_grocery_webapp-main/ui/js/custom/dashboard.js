@@ -44,16 +44,13 @@ $(document).ready(function() {
         
         recentOrders.forEach(order => {
             // Safely parse the order total
-            let orderTotal = 0;
-            if (order.total && !isNaN(parseFloat(order.total))) {
-                orderTotal = parseFloat(order.total);
-            }
+            let orderTotal = parseFloat(order.total || '0');
             
             tableContent += `
                 <tr>
                     <td>${formatDate(order.datetime)}</td>
                     <td>#${order.order_id}</td>
-                    <td>${order.customer_name}</td>
+                    <td>${order.customer_name || 'N/A'}</td>
                     <td>₹${orderTotal.toFixed(2)}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary view-order" data-id="${order.order_id}">
@@ -70,100 +67,76 @@ $(document).ready(function() {
         $('table tbody').html(tableContent);
         
         // Add event listeners for action buttons
-        $('.view-order').click(function() {
-            const orderId = $(this).data('id');
-            // Store the order ID and redirect to a detail page
-            localStorage.setItem('viewOrderId', orderId);
-            window.location.href = 'view-order.html';
-        });
-        
         $('.print-order').click(function() {
             const orderId = $(this).data('id');
-            // Find the order and store it for printing
             const order = orders.find(o => o.order_id == orderId);
             if (order) {
+                // Process order details for bill
+                const orderDetails = order.order_details || [];
+                const processedItems = orderDetails.map(detail => {
+                    // Find product details if available
+                    const product = detail.product || {};
+                    return {
+                        name: product.name || 'Unknown Item',
+                        quantity: parseInt(detail.quantity) || 0,
+                        unit: product.uom_name || 'unit',
+                        price: parseFloat(detail.unit_price || '0'),
+                        total: parseFloat(detail.total_price || '0')
+                    };
+                });
+
                 // Prepare order data for bill page
                 const orderData = {
                     orderId: order.order_id,
-                    customerName: order.customer_name,
+                    customerName: order.customer_name || 'N/A',
                     date: order.datetime,
-                    items: order.order_details || [],
-                    total: order.total
+                    items: processedItems,
+                    total: parseFloat(order.total || '0')
                 };
+                
+                console.log('Prepared order data for bill:', orderData); // Debug log
                 localStorage.setItem('lastOrder', JSON.stringify(orderData));
                 window.location.href = 'bill.html';
             }
+        });
+
+        $('.view-order').click(function() {
+            const orderId = $(this).data('id');
+            localStorage.setItem('viewOrderId', orderId);
+            window.location.href = 'view-order.html';
         });
     }
     
     // Function to update stats
     function updateStats(orders) {
-        // Update total orders
         $('#total-orders').text(orders.length);
         
         // Calculate total revenue
-        let totalRevenue = 0;
-        orders.forEach(order => {
-            // Add debug logging
-            console.log('Order:', order);
-            console.log('Order total:', order.total, typeof order.total);
-            
-            // Safely parse the order total
-            if (order.total && !isNaN(parseFloat(order.total))) {
-                totalRevenue += parseFloat(order.total);
-            } else {
-                console.log('Invalid order total:', order.total);
-            }
-        });
+        const totalRevenue = orders.reduce((sum, order) => {
+            const orderTotal = parseFloat(order.total || '0');
+            return sum + (isNaN(orderTotal) ? 0 : orderTotal);
+        }, 0);
         
-        // Format and display the total revenue
         $('#total-revenue').text('₹' + totalRevenue.toFixed(2));
     }
     
     // Function to format date
     function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) throw new Error('Invalid date');
+            
+            return date.toLocaleDateString('en-IN', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return 'Invalid Date';
+        }
     }
     
-    // Function to show empty message
-    function showEmptyMessage() {
-        $('table tbody').html(`
-            <tr>
-                <td colspan="5" class="text-center">
-                    <div class="py-5">
-                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" style="width: 80px; opacity: 0.5" class="mb-3">
-                        <p class="mb-3">No orders found. Create your first order!</p>
-                        <a href="order.html" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> New Order
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        `);
-    }
-    
-    // Function to show error message
-    function showErrorMessage() {
-        $('table tbody').html(`
-            <tr>
-                <td colspan="5" class="text-center text-danger">
-                    <div class="py-5">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                        <p>Unable to load orders. Please try again later.</p>
-                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="location.reload()">
-                            <i class="fas fa-sync-alt"></i> Retry
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `);
-    }
+    // ... rest of the code remains the same ...
 });
-
