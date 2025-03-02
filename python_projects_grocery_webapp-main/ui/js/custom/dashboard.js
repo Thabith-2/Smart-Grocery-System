@@ -1,13 +1,9 @@
 $(document).ready(function() {
-    // API endpoints
-    const ordersApiUrl = 'http://localhost:5000/getAllOrders';
-    const productsApiUrl = 'http://localhost:5000/getProducts';
-    
     console.log("Dashboard loading - fetching data from APIs");
     
     // Fetch orders from the API
     $.ajax({
-        url: ordersApiUrl,
+        url: orderListApiUrl,
         type: 'GET',
         success: function(response) {
             console.log("Orders API response:", response);
@@ -16,14 +12,14 @@ $(document).ready(function() {
                 updateStats(response);
             } else {
                 console.log("No orders found or empty response");
-                showEmptyMessage();
+                showEmptyState('table tbody', 'No Orders Found', 'Start by creating your first order', 'Create New Order', 'order.html', 'plus');
                 // Still update the order count to 0
                 $('#total-orders').text('0');
             }
         },
         error: function(error) {
             console.error('Error fetching orders:', error);
-            showErrorMessage();
+            showError('table tbody', 'Unable to load orders. Please try again later.');
             // Still update the order count to 0
             $('#total-orders').text('0');
         }
@@ -31,7 +27,7 @@ $(document).ready(function() {
     
     // Fetch products for stats
     $.ajax({
-        url: productsApiUrl,
+        url: productListApiUrl,
         type: 'GET',
         success: function(response) {
             console.log("Products API response:", response);
@@ -51,7 +47,7 @@ $(document).ready(function() {
     // Function to display orders in the table
     function displayOrders(orders) {
         if (!Array.isArray(orders) || orders.length === 0) {
-            showEmptyMessage();
+            showEmptyState('table tbody', 'No Orders Found', 'Start by creating your first order', 'Create New Order', 'order.html', 'plus');
             return;
         }
         
@@ -95,7 +91,7 @@ $(document).ready(function() {
                     <td>${formatDate(order.datetime)}</td>
                     <td>#${order.order_id}</td>
                     <td>${order.customer_name || 'N/A'}</td>
-                    <td>₹${orderTotal.toFixed(2)}</td>
+                    <td>${formatCurrency(orderTotal)}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary view-order" data-id="${order.order_id}">
                             <i class="fas fa-eye"></i>
@@ -117,7 +113,7 @@ $(document).ready(function() {
             if (order) {
                 // Fetch products to get product names
                 $.ajax({
-                    url: productsApiUrl,
+                    url: productListApiUrl,
                     type: 'GET',
                     success: function(products) {
                         console.log("Products for order:", products);
@@ -179,7 +175,9 @@ $(document).ready(function() {
                         window.location.href = 'bill.html';
                     },
                     error: function(error) {
-                        console.error('Error fetching products:', error);
+                        handleApiError(error);
+                        showToast('Error fetching product details', 'error');
+                        
                         // Fallback if products can't be fetched
                         const processedItems = orderDetails.map(detail => ({
                             name: `Product #${detail.product_id}`,
@@ -215,7 +213,7 @@ $(document).ready(function() {
     function updateStats(orders) {
         if (!Array.isArray(orders)) {
             $('#total-orders').text('0');
-            $('#total-revenue').text('₹0.00');
+            $('#total-revenue').text(formatCurrency(0));
             return;
         }
         
@@ -242,63 +240,11 @@ $(document).ready(function() {
             }
         });
         
-        $('#total-revenue').text('₹' + totalRevenue.toFixed(2));
+        $('#total-revenue').text(formatCurrency(totalRevenue));
     }
     
-    // Function to format date
-    function formatDate(dateString) {
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) throw new Error('Invalid date');
-            
-            return date.toLocaleDateString('en-IN', { 
-                day: 'numeric',
-                month: 'short', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (error) {
-            return 'Invalid Date';
-        }
-    }
-    
-    // Function to show empty message
-    function showEmptyMessage() {
-        $('table tbody').html(`
-            <tr>
-                <td colspan="5" class="text-center">
-                    <div class="py-5">
-                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" style="width: 80px; opacity: 0.5" class="mb-3">
-                        <p class="mb-3">No orders found. Create your first order!</p>
-                        <a href="order.html" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> New Order
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        `);
-    }
-    
-    // Function to show error message
-    function showErrorMessage() {
-        $('table tbody').html(`
-            <tr>
-                <td colspan="5" class="text-center text-danger">
-                    <div class="py-5">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                        <p>Unable to load orders. Please try again later.</p>
-                        <button class="btn btn-outline-primary btn-sm mt-2" id="retryButton">
-                            <i class="fas fa-sync-alt"></i> Retry
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `);
-        
-        // Add click handler for retry button
-        $('#retryButton').click(function() {
-            location.reload();
-        });
-    }
+    // Add retry button functionality
+    $(document).on('click', '#retryButton', function() {
+        location.reload();
+    });
 });
